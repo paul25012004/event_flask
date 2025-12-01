@@ -1,0 +1,29 @@
+<form method="post" enctype="multipart/form-data" action="{{ url_for('accounts.request_organizer') }}">
+
+  <div class="form-group">
+    <label for="phone">Numéro de téléphone (obligatoire) :</label>
+    <input type="tel" id="phone" name="phone" class="form-control" required>
+  </div>
+
+  <div class="form-group">
+    <label for="identity_type">Type de pièce d'identité (obligatoire) :</label>
+    <select id="identity_type" name="identity_type" class="form-control" required>
+      <option value="">-- Choisir --</option>
+      <option value="CNI">CNI</option>
+      <option value="Passeport">Passeport</option>
+      <option value="Permis de conduire">Permis de conduire</option>
+    </select>
+  </div>
+
+  <div class="form-group">
+    <label for="identity_recto">Photo (recto) de la pièce d'identité (obligatoire) :</label>
+    <input type="file" id="identity_recto" name="identity_recto" accept="image/*" class="form-control" required>
+  </div>
+
+  <div class="form-group">
+    <label for="identity_verso">Photo (verso) de la pièce d'identité (obligatoire) :</label>
+    <input type="file" id="identity_verso" name="identity_verso" accept="image/*" class="form-control" required>
+  </div>
+
+  <button type="submit" class="btn btn-primary">Envoyer ma demande</button>
+</form> 

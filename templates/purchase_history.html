@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Achats{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Mes Achats</h2>
+
+    {% if tickets %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 100px">Image</th>
+                    <th>Événement</th>
+                    <th>Type de ticket</th>
+                    <th>Quantité</th>
+                    <th>Prix total</th>
+                    <th>Date d'achat</th>
+                    <th>Statut</th>
+                    <th>QR Code</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr style="cursor: pointer" data-bs-toggle="modal" data-bs-target="#ticketModal{{ ticket.id }}">
+                    <td>
+                        {% if ticket.event.image_url %}
+                        <img src="{{ ticket.event.image_url }}" alt="{{ ticket.event.title }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <i class="bi bi-calendar-event" style="font-size: 2rem;"></i>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ ticket.event.title }}</td>
+                    <td>{{ ticket.ticket_type.name }}</td>
+                    <td>{{ ticket.quantity }}</td>
+                    <td>{{ "%.2f"|format(ticket.total_price) }} FCFA</td>
+                    <td>{{ ticket.purchase_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                        {% if ticket.payment_status == 'payé' %}
+                        <span class="badge bg-success">Payé</span>
+                        {% elif ticket.payment_status == 'en_attente' %}
+                        <span class="badge bg-warning">En attente</span>
+                        {% else %}
+                        <span class="badge bg-danger">Annulé</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ticket.qr_code %}
+                        <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#qrModal{{ ticket.id }}" onclick="event.stopPropagation()">
+                            <i class="bi bi-qr-code"></i> Voir QR Code
+                        </button>
+                        {% else %}
+                        <span class="text-muted">Non disponible</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Modals pour les QR Codes -->
+    {% for ticket in tickets %}
+    {% if ticket.qr_code %}
+    <div class="modal fade" id="qrModal{{ ticket.id }}" tabindex="-1" aria-labelledby="qrModalLabel{{ ticket.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="qrModalLabel{{ ticket.id }}">QR Code - {{ ticket.event.title }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <img src="data:image/png;base64,{{ ticket.qr_code }}" alt="QR Code" class="img-fluid">
+                    <p class="mt-2 mb-0">Présentez ce QR Code à l'entrée de l'événement</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+
+    <!-- Modals pour les détails des tickets -->
+    {% for ticket in tickets %}
+    <div class="modal fade" id="ticketModal{{ ticket.id }}" tabindex="-1" aria-labelledby="ticketModalLabel{{ ticket.id }}" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="ticketModalLabel{{ ticket.id }}">Détails du ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            {% if ticket.event.image_url %}
+                            <img src="{{ ticket.event.image_url }}" alt="{{ ticket.event.title }}" class="img-fluid rounded">
+                            {% else %}
+                            <div class="bg-light d-flex align-items-center justify-content-center rounded" style="height: 200px;">
+                                <i class="bi bi-calendar-event" style="font-size: 4rem;"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-8">
+                            <h4>{{ ticket.event.title }}</h4>
+                            <p class="text-muted">
+                                <i class="bi bi-calendar-event"></i> {{ ticket.event.date.strftime('%d/%m/%Y %H:%M') }}<br>
+                                <i class="bi bi-geo-alt"></i> {{ ticket.event.location }}<br>
+                                <i class="bi bi-tag"></i> {{ ticket.event.event_type }}
+                            </p>
+                            <hr>
+                            <h5>Détails du ticket</h5>
+                            <p>
+                                <strong>Type de ticket:</strong> {{ ticket.ticket_type.name }}<br>
+                                <strong>Quantité:</strong> {{ ticket.quantity }}<br>
+                                <strong>Prix unitaire:</strong> {{ "%.2f"|format(ticket.total_price / ticket.quantity) }} FCFA<br>
+                                <strong>Prix total:</strong> {{ "%.2f"|format(ticket.total_price) }} FCFA<br>
+                                <strong>Date d'achat:</strong> {{ ticket.purchase_date.strftime('%d/%m/%Y %H:%M') }}<br>
+                                <strong>Statut:</strong> 
+                                {% if ticket.payment_status == 'payé' %}
+                                <span class="badge bg-success">Payé</span>
+                                {% elif ticket.payment_status == 'en_attente' %}
+                                <span class="badge bg-warning">En attente</span>
+                                {% else %}
+                                <span class="badge bg-danger">Annulé</span>
+                                {% endif %}
+                            </p>
+                            {% if ticket.payment_status == 'en_attente' %}
+                            <div class="alert alert-warning">
+                                <i class="bi bi-exclamation-triangle"></i> Ce ticket est en attente de paiement.
+                                <a href="{{ url_for('create_payment', event_id=ticket.event.id) }}" class="alert-link">Cliquez ici pour payer</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    {% if ticket.payment_status == 'payé' %}
+                    <a href="{{ url_for('download_ticket', ticket_id=ticket.id) }}" class="btn btn-success">
+                        <i class="bi bi-download"></i> Télécharger le ticket
+                    </a>
+                    {% endif %}
+                    <a href="{{ url_for('event_detail', event_id=ticket.event.id) }}" class="btn btn-primary">
+                        <i class="bi bi-eye"></i> Voir l'événement
+                    </a>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Vous n'avez pas encore acheté de tickets.
+        <a href="{{ url_for('index') }}" class="alert-link">Voir les événements disponibles</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

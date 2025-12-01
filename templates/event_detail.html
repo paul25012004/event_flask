@@ -1,0 +1,322 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.title }} - Gestionnaire d'Événements{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Titre et informations principales -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h1 class="card-title mb-3">{{ event.title }}</h1>
+            <div class="d-flex flex-wrap gap-3">
+                <span class="badge bg-primary">
+                    <i class="bi bi-calendar-event"></i> {{ event.date.strftime('%d/%m/%Y %H:%M') }}
+                </span>
+                <span class="badge bg-secondary">
+                    <i class="bi bi-geo-alt"></i> {{ event.location }}
+                </span>
+                <span class="badge bg-info">
+                    <i class="bi bi-tag"></i> {{ event.event_type }}
+                </span>
+                <span class="badge bg-{{ event.get_status_color() }}">
+                    <i class="bi bi-info-circle"></i> {{ event.get_status_display() }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Image et description -->
+        <div class="col-lg-6">
+            {% if event.image_url %}
+            <img src="{{ event.image_url }}" alt="{{ event.title }}" class="img-fluid rounded mb-4" style="width: 100%; height: 400px; object-fit: cover;">
+            {% else %}
+            <div class="bg-light rounded mb-4 d-flex align-items-center justify-content-center" style="height: 400px;">
+                <i class="bi bi-calendar-event" style="font-size: 6rem;"></i>
+            </div>
+            {% endif %}
+            
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title h4 mb-3">Description</h2>
+                    <p class="card-text">{{ event.description }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Types de tickets -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-body">
+                    <h2 class="card-title h4 mb-4">Types de Tickets</h2>
+                    {% if event.is_past() %}
+                    <div class="alert alert-secondary">
+                        <i class="bi bi-clock-history"></i> Les ventes de tickets sont terminées pour cet événement.
+                    </div>
+                    {% elif ticket_types %}
+                        {% for ticket_type in ticket_types %}
+                        <div class="card mb-3 border-0 bg-light">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-6">
+                                        <h5 class="card-title mb-2">{{ ticket_type.name }}</h5>
+                                        <p class="card-text mb-0">
+                                            <strong>Prix :</strong> {{ "%.2f"|format(ticket_type.price) }} FCFA<br>
+                                            <strong>Places disponibles :</strong> {{ ticket_type.available_quantity }} / {{ ticket_type.total_quantity }}
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        {% if ticket_type.available_quantity > 0 %}
+                                        <form action="{{ url_for('create_payment', event_id=event.id) }}" method="POST" class="d-flex flex-column gap-2">
+                                            <input type="hidden" name="ticket_type_id" value="{{ ticket_type.id }}">
+                                            <div class="input-group">
+                                                <input type="number" name="quantity" class="form-control" value="1" min="1" max="{{ ticket_type.available_quantity }}" 
+                                                       onchange="updatePrice('{{ ticket_type.id }}', {{ ticket_type.price }})">
+                                            </div>
+                                            
+                                            <!-- Options de paiement -->
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-outline-primary flex-grow-1" onclick="showStripePayment('{{ ticket_type.id }}')">
+                                                    <i class="bi bi-credit-card"></i> Carte bancaire
+                                                </button>
+                                                <button type="button" class="btn btn-outline-success flex-grow-1" onclick="showFedaPayment('{{ ticket_type.id }}')">
+                                                    <i class="bi bi-phone"></i> Mobile Money
+                                                </button>
+                                            </div>
+
+                                            <!-- Message d'erreur de quantité -->
+                                            <div id="quantity-error-{{ ticket_type.id }}" class="text-danger mb-2" style="display: none;"></div>
+
+                                            <!-- Formulaire Stripe -->
+                                            <div id="stripePaymentForm_{{ ticket_type.id }}" style="display: none;">
+                                                <div class="mb-2">
+                                                    <div id="card-element_{{ ticket_type.id }}" class="form-control"></div>
+                                                    <div id="card-errors_{{ ticket_type.id }}" class="invalid-feedback" role="alert"></div>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary w-100" id="submit-button_{{ ticket_type.id }}">
+                                                    Payer <span id="stripe-price-{{ ticket_type.id }}">{{ "%.2f"|format(ticket_type.price) }}</span> FCFA
+                                                </button>
+                                            </div>
+
+                                            <!-- Formulaire FedaPay -->
+                                            <div id="fedaPaymentForm_{{ ticket_type.id }}" style="display: none;">
+                                                <form id="feda-form_{{ ticket_type.id }}">
+                                                    <script
+                                                        src="https://checkout.fedapay.com/js/checkout.js"
+                                                        data-public-key="pk_live_pIBWtCoYoH9dB00Y8Oe_Cqrw"
+                                                        data-button-text="Payer <span id='feda-price-{{ ticket_type.id }}'>{{ "%.2f"|format(ticket_type.price) }}</span> FCFA"
+                                                        data-button-class="btn btn-success w-100"
+                                                        data-transaction-amount="{{ ticket_type.price|round|int }}"
+                                                        data-transaction-description="Achat de tickets pour {{ event.title }}"
+                                                        data-currency-iso="XOF"
+                                                        data-widget-description="Votre plateforme d'événements"
+                                                        data-widget-title="Event Platform"
+                                                        data-country="TG"
+                                                        data-payment-methods="moov,tmoney">
+                                                    </script>
+                                                </form>
+                                            </div>
+                                        </form>
+                                        {% else %}
+                                        <div class="alert alert-warning mb-0">
+                                            <i class="bi bi-exclamation-triangle"></i> Complet
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Aucun type de ticket disponible pour le moment.
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script src="https://js.stripe.com/v3/"></script>
+<script>
+    // Fonction pour mettre à jour le prix
+    function updatePrice(ticketTypeId, basePrice) {
+        const quantityInput = document.querySelector(`input[name="ticket_type_id"][value="${ticketTypeId}"]`).closest('form').querySelector('input[name="quantity"]');
+        const quantity = parseInt(quantityInput.value);
+        const totalPrice = (basePrice * quantity).toFixed(2);
+        
+        // Mise à jour du prix pour Stripe
+        document.getElementById(`stripe-price-${ticketTypeId}`).textContent = totalPrice;
+        
+        // Mise à jour du prix pour FedaPay
+        document.getElementById(`feda-price-${ticketTypeId}`).textContent = totalPrice;
+        
+        // Si le formulaire FedaPay est visible, mettre à jour le widget
+        if (document.getElementById(`fedaPaymentForm_${ticketTypeId}`).style.display === 'block') {
+            showFedaPayment(ticketTypeId);
+        }
+    }
+
+    // Configuration Stripe
+    const stripe = Stripe('{{ stripe_public_key }}');
+    const elements = stripe.elements();
+
+    // Fonction pour initialiser les éléments de carte pour chaque type de ticket
+    function initializeCardElements() {
+        {% for ticket_type in ticket_types %}
+        const card_{{ ticket_type.id }} = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#32325d',
+                    fontFamily: '"Helvetica Neue", Helvetica, sans-serif',
+                    fontSmoothing: 'antialiased',
+                    '::placeholder': {
+                        color: '#aab7c4'
+                    }
+                },
+                invalid: {
+                    color: '#fa755a',
+                    iconColor: '#fa755a'
+                }
+            }
+        });
+        card_{{ ticket_type.id }}.mount('#card-element_{{ ticket_type.id }}');
+
+        // Gestion des erreurs de carte
+        card_{{ ticket_type.id }}.addEventListener('change', function(event) {
+            const displayError = document.getElementById('card-errors_{{ ticket_type.id }}');
+            if (event.error) {
+                displayError.textContent = event.error.message;
+                displayError.style.display = 'block';
+            } else {
+                displayError.textContent = '';
+                displayError.style.display = 'none';
+            }
+        });
+        {% endfor %}
+    }
+
+    // Initialiser les éléments de carte au chargement de la page
+    initializeCardElements();
+
+    // Fonctions pour afficher/masquer les formulaires de paiement
+    function showStripePayment(ticketTypeId) {
+        const quantityInput = document.querySelector(`input[name="ticket_type_id"][value="${ticketTypeId}"]`).closest('form').querySelector('input[name="quantity"]');
+        const quantity = parseInt(quantityInput.value);
+        const maxQuantity = parseInt(quantityInput.max);
+        const errorElement = document.getElementById('quantity-error-' + ticketTypeId);
+        
+        if (quantity > maxQuantity) {
+            errorElement.textContent = `Le nombre maximum de tickets disponibles est de ${maxQuantity}`;
+            errorElement.style.display = 'block';
+            quantityInput.value = maxQuantity;
+            return;
+        }
+        
+        errorElement.style.display = 'none';
+        document.getElementById('stripePaymentForm_' + ticketTypeId).style.display = 'block';
+        document.getElementById('fedaPaymentForm_' + ticketTypeId).style.display = 'none';
+    }
+
+    function showFedaPayment(ticketTypeId) {
+        const quantityInput = document.querySelector(`input[name="ticket_type_id"][value="${ticketTypeId}"]`).closest('form').querySelector('input[name="quantity"]');
+        const quantity = parseInt(quantityInput.value);
+        const maxQuantity = parseInt(quantityInput.max);
+        const errorElement = document.getElementById('quantity-error-' + ticketTypeId);
+        
+        if (quantity > maxQuantity) {
+            errorElement.textContent = `Le nombre maximum de tickets disponibles est de ${maxQuantity}`;
+            errorElement.style.display = 'block';
+            quantityInput.value = maxQuantity;
+            return;
+        }
+        
+        errorElement.style.display = 'none';
+        document.getElementById('stripePaymentForm_' + ticketTypeId).style.display = 'none';
+        document.getElementById('fedaPaymentForm_' + ticketTypeId).style.display = 'block';
+
+        // Mise à jour du montant pour FedaPay
+        const basePrice = parseFloat(document.getElementById(`feda-price-${ticketTypeId}`).textContent);
+        const totalAmount = Math.round(basePrice * quantity);
+        
+        // Mise à jour du script FedaPay
+        const fedaForm = document.getElementById(`feda-form_${ticketTypeId}`);
+        if (fedaForm) {
+            const script = fedaForm.querySelector('script');
+            script.setAttribute('data-transaction-amount', totalAmount);
+            
+            // Recréer le widget FedaPay avec le nouveau montant
+            const newScript = document.createElement('script');
+            newScript.src = script.src;
+            newScript.setAttribute('data-public-key', script.getAttribute('data-public-key'));
+            newScript.setAttribute('data-button-text', `Payer ${totalAmount.toFixed(2)} FCFA`);
+            newScript.setAttribute('data-button-class', script.getAttribute('data-button-class'));
+            newScript.setAttribute('data-transaction-amount', totalAmount);
+            newScript.setAttribute('data-transaction-description', script.getAttribute('data-transaction-description'));
+            newScript.setAttribute('data-currency-iso', script.getAttribute('data-currency-iso'));
+            newScript.setAttribute('data-widget-description', script.getAttribute('data-widget-description'));
+            newScript.setAttribute('data-widget-title', script.getAttribute('data-widget-title'));
+            newScript.setAttribute('data-country', script.getAttribute('data-country'));
+            newScript.setAttribute('data-payment-methods', script.getAttribute('data-payment-methods'));
+            
+            script.parentNode.replaceChild(newScript, script);
+        }
+    }
+
+    // Soumission des formulaires Stripe
+    {% for ticket_type in ticket_types %}
+    const form_{{ ticket_type.id }} = document.querySelector('form[action*="create_payment"] input[name="ticket_type_id"][value="{{ ticket_type.id }}"]').closest('form');
+    form_{{ ticket_type.id }}.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        
+        const quantityInput = this.querySelector('input[name="quantity"]');
+        const quantity = parseInt(quantityInput.value);
+        const maxQuantity = parseInt(quantityInput.max);
+        const errorElement = document.getElementById('quantity-error-{{ ticket_type.id }}');
+        
+        if (quantity > maxQuantity) {
+            errorElement.textContent = `Le nombre maximum de tickets disponibles est de ${maxQuantity}`;
+            errorElement.style.display = 'block';
+            quantityInput.value = maxQuantity;
+            return;
+        }
+        
+        errorElement.style.display = 'none';
+        const submitButton = document.getElementById('submit-button_{{ ticket_type.id }}');
+        submitButton.disabled = true;
+        submitButton.textContent = 'Traitement en cours...';
+
+        try {
+            const {paymentMethod, error} = await stripe.createPaymentMethod({
+                type: 'card',
+                card: card_{{ ticket_type.id }},
+            });
+
+            if (error) {
+                const errorElement = document.getElementById('card-errors_{{ ticket_type.id }}');
+                errorElement.textContent = error.message;
+                errorElement.style.display = 'block';
+                submitButton.disabled = false;
+                submitButton.textContent = 'Payer <span id="stripe-price-{{ ticket_type.id }}">{{ "%.2f"|format(ticket_type.price) }}</span> FCFA';
+            } else {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.setAttribute('type', 'hidden');
+                hiddenInput.setAttribute('name', 'payment_method_id');
+                hiddenInput.setAttribute('value', paymentMethod.id);
+                form_{{ ticket_type.id }}.appendChild(hiddenInput);
+                form_{{ ticket_type.id }}.submit();
+            }
+        } catch (e) {
+            console.error('Erreur:', e);
+            submitButton.disabled = false;
+            submitButton.textContent = 'Payer <span id="stripe-price-{{ ticket_type.id }}">{{ "%.2f"|format(ticket_type.price) }}</span> FCFA';
+        }
+    });
+    {% endfor %}
+</script>
+{% endblock %} 

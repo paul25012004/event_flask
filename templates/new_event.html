@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block title %}Nouvel Événement{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="mb-4">Créer un nouvel événement</h1>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8 mx-auto">
+        <div class="card">
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Titre de l'événement</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="event_type" class="form-label">Type d'événement</label>
+                        <select class="form-select" id="event_type" name="event_type" required>
+                            <option value="">Sélectionnez un type</option>
+                            <option value="concert">Concert</option>
+                            <option value="cinema">cinema</option>
+                            <option value="theatre">Théâtre</option>
+                            <option value="sport">Sport</option>
+                            <option value="conference">Conférence</option>
+                            <option value="autre">Autre</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="date" class="form-label">Date et heure</label>
+                        <input type="datetime-local" class="form-control" id="date" name="date" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="location" class="form-label">Lieu</label>
+                        <input type="text" class="form-control" id="location" name="location" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="image" class="form-label">Image de l'événement</label>
+                        <input type="file" class="form-control" id="image" name="image" accept="image/*">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ticket_types_count" class="form-label">Nombre de modalités de places</label>
+                        <input type="number" class="form-control" id="ticket_types_count" name="ticket_types_count" min="1" value="1" required>
+                    </div>
+
+                    <div id="ticket_types_container">
+                        <!-- Les champs pour les modalités de places seront ajoutés ici dynamiquement -->
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Créer l'événement</button>
+                        <a href="{{ url_for('my_events') }}" class="btn btn-outline-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ticketTypesCount = document.getElementById('ticket_types_count');
+    const container = document.getElementById('ticket_types_container');
+
+    function updateTicketTypes() {
+        const count = parseInt(ticketTypesCount.value);
+        container.innerHTML = '';
+
+        for (let i = 0; i < count; i++) {
+            const ticketTypeHtml = `
+                <div class="card mb-3">
+                    <div class="card-body">
+                        <h5 class="card-title">Modalité de place ${i + 1}</h5>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Nom (ex: VIP, Standard)</label>
+                                <input type="text" class="form-control" name="ticket_type_name_${i}" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Nombre de places</label>
+                                <input type="number" class="form-control" name="ticket_type_quantity_${i}" min="1" required>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Prix (FCFA)</label>
+                                <input type="number" class="form-control" name="ticket_type_price_${i}" min="0" step="0.01" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', ticketTypeHtml);
+        }
+    }
+
+    ticketTypesCount.addEventListener('change', updateTicketTypes);
+    updateTicketTypes(); // Initial call
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Profil - Gestionnaire d'Événements{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title mb-0">Profil Utilisateur</h2>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <i class="bi bi-person-circle" style="font-size: 5rem;"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <h3>{{ user.prenom }} {{ user.nom }}</h3>
+                            <p class="text-muted">@{{ user.username }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-12">
+                            <h4>Mes Achats</h4>
+                            {% if user.tickets %}
+                                <div class="table-responsive">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Événement</th>
+                                                <th>Date d'achat</th>
+                                                <th>Quantité</th>
+                                                <th>Prix total</th>
+                                                <th>Statut</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for ticket in user.tickets %}
+                                            <tr>
+                                                <td>{{ ticket.event.title }}</td>
+                                                <td>{{ ticket.purchase_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                                                <td>{{ ticket.quantity }}</td>
+                                                <td>{{ "%.2f"|format(ticket.total_price) }} FCFA</td>
+                                                <td>
+                                                    {% if ticket.payment_status == 'payé' %}
+                                                        <span class="badge bg-success">Payé</span>
+                                                    {% elif ticket.payment_status == 'en_attente' %}
+                                                        <span class="badge bg-warning">En attente</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Annulé</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    Vous n'avez pas encore acheté de tickets.
+                                    <a href="{{ url_for('index') }}" class="alert-link">Découvrir les événements</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

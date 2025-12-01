@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Tableau de bord{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="mb-4">Tableau de bord</h1>
+    </div>
+</div>
+
+<!-- Boutons d'action -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <a href="{{ url_for('dashboard') }}" class="btn btn-primary">
+                <i class="bi bi-speedometer2"></i> Tableau de bord
+            </a>
+            <div class="d-flex gap-2">
+                <a href="{{ url_for('new_event') }}" class="btn btn-success">
+                    <i class="bi bi-plus-circle"></i> Créer un événement
+                </a>
+                <a href="{{ url_for('my_events_list') }}" class="btn btn-info text-white">
+                    <i class="bi bi-list-ul"></i> Liste de mes événements
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if has_events %}
+<!-- Statistiques -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title">Total des événements</h5>
+                <p class="card-text display-4">{{ total_events }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title">Tickets vendus</h5>
+                <p class="card-text display-4">{{ total_tickets_sold }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title">Revenus totaux</h5>
+                <p class="card-text display-4">{{ total_revenue }} FCFA</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphiques -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Ventes par événement</h5>
+                <div style="height: 300px;">
+                    <canvas id="salesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Places disponibles vs vendues</h5>
+                <div style="height: 300px;">
+                    <canvas id="ticketsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h3 class="card-title mb-4">Bienvenue sur votre tableau de bord !</h3>
+                <p class="card-text mb-4">
+                    Vous n'avez pas encore créé d'événements. Commencez dès maintenant à organiser vos événements et à vendre vos tickets !
+                </p>
+                <a href="{{ url_for('new_event') }}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-circle"></i> Créer votre premier événement
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistiques vides -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Total des événements</h5>
+                <p class="card-text display-4">0</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Tickets vendus</h5>
+                <p class="card-text display-4">0</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-white bg-secondary">
+            <div class="card-body">
+                <h5 class="card-title">Revenus totaux</h5>
+                <p class="card-text display-4">0 FCFA</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if has_events %}
+<script>
+// Données pour le graphique des ventes
+const salesCtx = document.getElementById('salesChart').getContext('2d');
+new Chart(salesCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ event_names|tojson }},
+        datasets: [{
+            label: 'Ventes par événement',
+            data: {{ event_sales|tojson }},
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Données pour le graphique des tickets
+const ticketsCtx = document.getElementById('ticketsChart').getContext('2d');
+new Chart(ticketsCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['Vendus', 'Disponibles'],
+        datasets: [{
+            data: [{{ total_tickets_sold }}, {{ total_available_tickets }}],
+            backgroundColor: [
+                'rgba(75, 192, 192, 0.5)',
+                'rgba(255, 99, 132, 0.5)'
+            ],
+            borderColor: [
+                'rgba(75, 192, 192, 1)',
+                'rgba(255, 99, 132, 1)'
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+</script>
+{% endif %}
+{% endblock %} 

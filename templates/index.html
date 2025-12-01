@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+
+{% block title %}Liste des Événements{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Liste des Événements</h1>
+
+    <!-- Barre de recherche et filtres -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="GET" action="{{ url_for('index') }}" class="row g-3">
+                <!-- Barre de recherche -->
+                <div class="col-md-3">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" name="search" placeholder="Rechercher un événement..." value="{{ request.args.get('search', '') }}">
+                    </div>
+                </div>
+
+                <!-- Filtre par statut -->
+                <div class="col-md-2">
+                    <select class="form-select" name="status">
+                        <option value="">Tous les statuts</option>
+                        <option value="upcoming" {% if request.args.get('status') == 'upcoming' %}selected{% endif %}>À venir</option>
+                        <option value="ongoing" {% if request.args.get('status') == 'ongoing' %}selected{% endif %}>En cours</option>
+                        <option value="past" {% if request.args.get('status') == 'past' %}selected{% endif %}>Passés</option>
+                    </select>
+                </div>
+
+                <!-- Filtre par type -->
+                <div class="col-md-2">
+                    <select class="form-select" name="type">
+                        <option value="">Tous les types</option>
+                        {% for type in event_types %}
+                        <option value="{{ type }}" {% if request.args.get('type') == type %}selected{% endif %}>{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Filtre par lieu -->
+                <div class="col-md-2">
+                    <select class="form-select" name="location">
+                        <option value="">Tous les lieux</option>
+                        {% for location in locations %}
+                        <option value="{{ location }}" {% if request.args.get('location') == location %}selected{% endif %}>{{ location }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Filtre par prix -->
+                <div class="col-md-2">
+                    <select class="form-select" name="price_sort">
+                        <option value="">Prix</option>
+                        <option value="asc" {% if request.args.get('price_sort') == 'asc' %}selected{% endif %}>Du moins cher au plus cher</option>
+                        <option value="desc" {% if request.args.get('price_sort') == 'desc' %}selected{% endif %}>Du plus cher au moins cher</option>
+                    </select>
+                </div>
+
+                <!-- Boutons de filtrage -->
+                <div class="col-md-1 d-flex justify-content-end">
+                    <div class="d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="bi bi-funnel"></i>
+                        </button>
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary btn-sm">
+                            <i class="bi bi-x-circle"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Liste des événements -->
+    <div class="row row-cols-1 row-cols-md-3 g-4">
+        {% for event in events %}
+        <div class="col">
+            <div class="card h-100">
+                {% if event.image_url %}
+                <img src="{{ event.image_url }}" class="card-img-top" alt="{{ event.title }}" style="height: 200px; object-fit: cover;">
+                {% else %}
+                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                    <i class="bi bi-calendar-event" style="font-size: 2.5rem;"></i>
+                </div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ event.title }}</h5>
+                    <p class="card-text description-truncate">{{ event.description }}</p>
+                    <div class="event-meta mb-2">
+                        <span class="badge bg-primary">
+                            <i class="bi bi-calendar-event"></i> {{ event.date.strftime('%d/%m/%Y') }}
+                        </span>
+                        <span class="badge bg-secondary">
+                            <i class="bi bi-geo-alt"></i> {{ event.location }}
+                        </span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="badge bg-{{ event.get_status_color() }}">{{ event.get_status_display() }}</span>
+                        {% set available_tickets = event.get_available_tickets() %}
+                        {% if available_tickets > 0 and not event.is_past() %}
+                            <span class="badge bg-success">
+                                <i class="bi bi-ticket-perforated"></i> {{ available_tickets }} places disponibles
+                            </span>
+                        {% elif event.is_past() %}
+                            <span class="badge bg-secondary">
+                                <i class="bi bi-clock-history"></i> Terminé
+                            </span>
+                        {% else %}
+                            <span class="badge bg-danger">
+                                <i class="bi bi-x-circle"></i> Complet
+                            </span>
+                        {% endif %}
+                    </div>
+                    <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-primary w-100">
+                        Voir détails
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-info">
+                Aucun événement disponible pour le moment.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.25rem;
+    height: 1.4em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.description-truncate {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin-bottom: 0.5rem;
+    height: 1.4em;
+    line-height: 1.4em;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+.event-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+
+.card-body {
+    padding: 0.75rem;
+}
+</style>
+{% endblock %} 

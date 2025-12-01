@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Événements{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <!-- Filtres -->
+        <div class="col-lg-3">
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-funnel"></i> Filtres
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('events_list') }}" class="needs-validation" novalidate>
+                        <!-- Catégorie -->
+                        <div class="mb-3">
+                            <label for="category" class="form-label">Catégorie</label>
+                            <select class="form-select" id="category" name="category">
+                                <option value="">Toutes les catégories</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if request.args.get('category')|int == category.id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <!-- Date -->
+                        <div class="mb-3">
+                            <label for="date" class="form-label">Date</label>
+                            <select class="form-select" id="date" name="date">
+                                <option value="">Toutes les dates</option>
+                                <option value="today" {% if request.args.get('date') == 'today' %}selected{% endif %}>Aujourd'hui</option>
+                                <option value="tomorrow" {% if request.args.get('date') == 'tomorrow' %}selected{% endif %}>Demain</option>
+                                <option value="week" {% if request.args.get('date') == 'week' %}selected{% endif %}>Cette semaine</option>
+                                <option value="month" {% if request.args.get('date') == 'month' %}selected{% endif %}>Ce mois</option>
+                            </select>
+                        </div>
+
+                        <!-- Prix maximum -->
+                        <div class="mb-3">
+                            <label for="max_price" class="form-label">Prix maximum</label>
+                            <div class="input-group">
+                                <input type="number" class="form-control" id="max_price" name="max_price" 
+                                       min="0" step="1000" value="{{ request.args.get('max_price', '') }}"
+                                       placeholder="Prix maximum">
+                                <span class="input-group-text">FCFA</span>
+                            </div>
+                        </div>
+
+                        <!-- Boutons -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Filtrer
+                            </button>
+                            <a href="{{ url_for('events_list') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-circle"></i> Réinitialiser
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Liste des événements -->
+        <div class="col-lg-9">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Événements</h1>
+                <div class="btn-group">
+                    <a href="{{ url_for('events_list', view='grid') }}" class="btn btn-outline-primary {% if request.args.get('view') != 'list' %}active{% endif %}">
+                        <i class="bi bi-grid-3x3-gap"></i>
+                    </a>
+                    <a href="{{ url_for('events_list', view='list') }}" class="btn btn-outline-primary {% if request.args.get('view') == 'list' %}active{% endif %}">
+                        <i class="bi bi-list"></i>
+                    </a>
+                </div>
+            </div>
+
+            {% if events %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+                {% for event in events %}
+                <div class="col">
+                    <div class="card h-100">
+                        {% if event.image_url %}
+                        <img src="{{ event.image_url }}" class="card-img-top" alt="{{ event.title }}">
+                        {% else %}
+                        <div class="card-img-top bg-light d-flex align-items-center justify-content-center">
+                            <i class="bi bi-calendar-event text-muted" style="font-size: 2.5rem;"></i>
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ event.title }}</h5>
+                            <div class="event-info">
+                                <div class="event-meta">
+                                    <span class="badge bg-primary">
+                                        <i class="bi bi-calendar-event"></i> {{ event.date.strftime('%d/%m/%Y') }}
+                                    </span>
+                                    <span class="badge bg-secondary">
+                                        <i class="bi bi-geo-alt"></i> {{ event.location }}
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2">
+                                    <span class="event-price">{{ "%.2f"|format(event.price) }} FCFA</span>
+                                    <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-primary btn-details">
+                                        Voir détails
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i> Aucun événement ne correspond à vos critères.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    height: 100%;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.card-img-top {
+    border-top-left-radius: calc(0.25rem - 1px);
+    border-top-right-radius: calc(0.25rem - 1px);
+    height: 300px;
+    object-fit: cover;
+}
+
+.card-body {
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.card-title {
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+    height: 1.4em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.35em 0.65em;
+}
+
+.event-info {
+    margin-top: auto;
+}
+
+.event-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.event-price {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #0d6efd;
+}
+
+.btn-details {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.875rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.input-group-text {
+    background-color: #f8f9fa;
+    border-color: #ced4da;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Demande d'Organisateur{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title h4 mb-0">Demande pour devenir Organisateur</h2>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> En tant qu'organisateur, vous pourrez :
+                        <ul class="mb-0 mt-2">
+                            <li>Créer et gérer vos propres événements</li>
+                            <li>Gérer les types de tickets pour vos événements</li>
+                            <li>Suivre les ventes et les statistiques de vos événements</li>
+                        </ul>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data">
+                        <div class="mb-3">
+                            <label for="phone" class="form-label">Numéro de téléphone *</label>
+                            <input type="tel" class="form-control" id="phone" name="phone" required
+                                   placeholder="Ex: +33 6 12 34 56 78 ou 06 12 34 56 78">
+                            <div class="form-text">Format accepté: numéro international ou national avec ou sans espaces</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="identity_type" class="form-label">Type de pièce d'identité *</label>
+                            <select class="form-select" id="identity_type" name="identity_type" required>
+                                <option value="">Sélectionnez un type</option>
+                                <option value="CNI">Carte Nationale d'Identité</option>
+                                <option value="Passeport">Passeport</option>
+                                <option value="Permis">Permis de conduire</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="identity_recto" class="form-label">Photo recto de la pièce d'identité *</label>
+                            <input type="file" class="form-control" id="identity_recto" name="identity_recto" 
+                                   accept="image/*" required>
+                            <div class="form-text">Formats acceptés: JPG, PNG, PDF. Taille max: 5MB</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="identity_verso" class="form-label">Photo verso de la pièce d'identité *</label>
+                            <input type="file" class="form-control" id="identity_verso" name="identity_verso" 
+                                   accept="image/*" required>
+                            <div class="form-text">Formats acceptés: JPG, PNG, PDF. Taille max: 5MB</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message (optionnel)</label>
+                            <textarea class="form-control" id="message" name="message" rows="4" 
+                                    placeholder="Expliquez pourquoi vous souhaitez devenir organisateur..."></textarea>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> 
+                            En soumettant cette demande, vous acceptez que vos informations d'identité soient vérifiées par nos administrateurs.
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send"></i> Envoyer la demande
+                            </button>
+                            <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

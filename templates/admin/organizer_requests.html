@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}Demandes d'Organisateur{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Demandes d'Organisateur</h2>
+        <a href="{{ url_for('admin_users') }}" class="btn btn-outline-primary">
+            <i class="bi bi-people"></i> Gestion des Utilisateurs
+        </a>
+    </div>
+
+    {% if requests %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Utilisateur</th>
+                    <th>Contact</th>
+                    <th>Pièce d'identité</th>
+                    <th>Date de demande</th>
+                    <th>Message</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in requests %}
+                <tr>
+                    <td>
+                        {{ user.username }}
+                        {% if user.first_name and user.last_name %}
+                        <br>
+                        <small class="text-muted">{{ user.first_name }} {{ user.last_name }}</small>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <strong>Téléphone:</strong><br>
+                        {{ user.organizer_request_phone }}
+                    </td>
+                    <td>
+                        <strong>Type:</strong> {{ user.organizer_request_identity_type }}<br>
+                        <div class="btn-group mt-1">
+                            <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#identityModal{{ user.id }}">
+                                <i class="bi bi-card-image"></i> Voir les documents
+                            </button>
+                        </div>
+                    </td>
+                    <td>{{ user.organizer_request_date.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>
+                        {% if user.organizer_request_message %}
+                        <button type="button" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#messageModal{{ user.id }}">
+                            <i class="bi bi-chat"></i> Voir le message
+                        </button>
+                        {% else %}
+                        <span class="text-muted">Aucun message</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('approve_organizer_request', user_id=user.id) }}" 
+                               class="btn btn-sm btn-success" 
+                               onclick="return confirm('Êtes-vous sûr de vouloir approuver cette demande ?')">
+                                <i class="bi bi-check-lg"></i> Approuver
+                            </a>
+                            <a href="{{ url_for('reject_organizer_request', user_id=user.id) }}" 
+                               class="btn btn-sm btn-danger"
+                               onclick="return confirm('Êtes-vous sûr de vouloir rejeter cette demande ?')">
+                                <i class="bi bi-x-lg"></i> Rejeter
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+
+                <!-- Modal pour afficher le message -->
+                {% if user.organizer_request_message %}
+                <div class="modal fade" id="messageModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Message de {{ user.username }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                {{ user.organizer_request_message }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Modal pour afficher les documents d'identité -->
+                <div class="modal fade" id="identityModal{{ user.id }}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Documents d'identité de {{ user.username }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6>Recto</h6>
+                                        <img src="{{ user.organizer_request_identity_recto }}" 
+                                             class="img-fluid rounded" alt="Recto de la pièce d'identité">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Verso</h6>
+                                        <img src="{{ user.organizer_request_identity_verso }}" 
+                                             class="img-fluid rounded" alt="Verso de la pièce d'identité">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Aucune demande d'organisateur en attente.
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Mes Événements{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Mes Événements</h2>
+        <a href="{{ url_for('new_event') }}" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Créer un nouvel événement
+        </a>
+    </div>
+
+    {% if events %}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Image</th>
+                    <th>Titre</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Lieu</th>
+                    <th>Statut</th>
+                    <th>Tickets vendus</th>
+                    <th>Places restantes</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events %}
+                <tr>
+                    <td>
+                        {% if event.image_url %}
+                        <img src="{{ event.image_url }}" alt="{{ event.title }}" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover;">
+                        {% else %}
+                        <div class="bg-light d-flex align-items-center justify-content-center" style="width: 80px; height: 80px;">
+                            <i class="bi bi-calendar-event" style="font-size: 2rem;"></i>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td>{{ event.title }}</td>
+                    <td>{{ event.date.strftime('%d/%m/%Y %H:%M') }}</td>
+                    <td>{{ event.event_type }}</td>
+                    <td>{{ event.location }}</td>
+                    <td>
+                        {% if event.date > now %}
+                            <span class="badge bg-success">À venir</span>
+                        {% elif event.date <= now and event.date + timedelta(hours=24) >= now %}
+                            <span class="badge bg-warning">En cours</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Terminé</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ event.get_total_tickets_sold() }}</td>
+                    <td>{{ event.get_available_tickets() }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-sm btn-info" title="Voir">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{{ url_for('edit_event', event_id=event.id) }}" class="btn btn-sm btn-warning" title="Modifier">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ event.id }}" title="Supprimer">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </div>
+
+                        <!-- Modal de confirmation de suppression -->
+                        <div class="modal fade" id="deleteModal{{ event.id }}" tabindex="-1">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Confirmer la suppression</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        Êtes-vous sûr de vouloir supprimer l'événement "{{ event.title }}" ?
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                        <form action="{{ url_for('delete_event', event_id=event.id) }}" method="POST" class="d-inline">
+                                            <button type="submit" class="btn btn-danger">Supprimer</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Vous n'avez pas encore créé d'événements.
+        <a href="{{ url_for('new_event') }}" class="alert-link">Créer votre premier événement</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %} 
